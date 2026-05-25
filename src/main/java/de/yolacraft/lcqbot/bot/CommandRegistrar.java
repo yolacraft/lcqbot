@@ -21,21 +21,23 @@ public class CommandRegistrar implements ApplicationRunner {
     public void run(ApplicationArguments args) {
         jda.updateCommands().addCommands(
                 Commands.slash("init", "Erstellt ein neues Event")
-                        .addOption(OptionType.STRING, "name", "Name des Events", true)
-                        .addOption(OptionType.STRING, "apikey", "API Key für das Tracking", true),
-
-                Commands.slash("config", "Konfiguriert Rollen und Kanäle für ein Event")
-                        .addOption(OptionType.ROLE,    "adminrole",    "Rolle die Commands ausführen darf", true)
-                        .addOption(OptionType.ROLE,    "playerrole",   "Rolle für aktive Spieler", true)
-                        .addOption(OptionType.CHANNEL, "resultschan",  "Kanal für Ergebnisse", true)
-                        .addOption(OptionType.CHANNEL, "leaderboard",  "Kanal für Live-Leaderboard", true)
-                        .addOption(OptionType.STRING,  "event",        "Event ID (optional, sonst latest)", false),
+                        .addOption(OptionType.STRING, "name", "name of the event", true)
+                        .addOption(OptionType.ROLE, "player_role", "Role for the players while in tournament", true)
+                        .addOption(OptionType.CHANNEL, "leaderboard_channel", "Channel for the live Leaderboard", true)
+                        .addOption(OptionType.CHANNEL, "log_channel", "Channel for the live Logs", true)
+                        .addOption(OptionType.CHANNEL, "results_channel", "Channel for the match Results", true),
 
                 Commands.slash("add_player", "Fügt einen Spieler zum Event hinzu")
-                        .addOption(OptionType.STRING, "ingame",   "Ingame Name", true)
-                        .addOption(OptionType.STRING, "alias",    "Alias/Spitzname", true)
+                        .addOption(OptionType.STRING, "uuid",   "mc uuid", true)
+                        .addOption(OptionType.STRING, "ingame",   "ingame name", true)
                         .addOption(OptionType.USER,   "user",     "Discord User", true)
-                        .addOption(OptionType.STRING, "event",    "Event ID (optional)", false),
+                        .addOption(OptionType.STRING,   "twitch",     "Twitch Username", true)
+                        .addOption(OptionType.STRING, "event",    "Event Name (optional)", false),
+
+                Commands.slash("register", "Registriere dich für WEEKLY SUMMIT")
+                        .addOption(OptionType.STRING, "ign", "Dein UserName in MCSR RANKED", true)
+                        .addOption(OptionType.STRING, "twitch", "Dein Twitch Username", true)
+                        .addOption(OptionType.USER, "user", "Discord User (optional, sonst du selbst)", false),
 
                 Commands.slash("list_players", "Listet alle Spieler für ein Event")
                         .addOption(OptionType.STRING, "event", "Event ID (optional, sonst latest)", false),
@@ -47,16 +49,12 @@ public class CommandRegistrar implements ApplicationRunner {
                         .addOption(OptionType.USER, "user", "Discord User", true)
                         .addOption(OptionType.STRING, "event", "Event ID (optional, sonst latest)", false),
 
-                Commands.slash("start_event", "Gibt allen Spielern die Spieler-Rolle")
-                        .addOption(OptionType.STRING, "event", "Event ID (optional)", false),
-
                 Commands.slash("start_tracking", "Startet das Match-Tracking über die API")
                         .addOption(OptionType.STRING, "event", "Event ID (optional)", false)
                         .addOption(OptionType.STRING, "host", "Player der den Room hostet"),
 
-                Commands.slash("confirm_seed", "Bestätigt das Ergebnis des letzten Seeds")
-                        .addOption(OptionType.INTEGER, "seed",  "Seed Nummer", true)
-                        .addOption(OptionType.STRING,  "event", "Event ID (optional)", false),
+                Commands.slash("start_event", "Startet ein Event - gibt Rollen und zeigt Leaderboard")
+                        .addOption(OptionType.STRING, "event", "Event Name (optional, sonst latest)", false),
 
                 Commands.slash("global_create", "Erstellt ein globales Season Leaderboard")
                         .addOption(OptionType.INTEGER, "season", "Season Nummer", true)
@@ -72,14 +70,22 @@ public class CommandRegistrar implements ApplicationRunner {
                 Commands.slash("sync", "Synchronisiert das gespeicherte Season Leaderboard")
                         .addOption(OptionType.STRING, "leaderboard", "Leaderboard UUID (optional)", false),
 
-                Commands.slash("leaderboard", "Aktualisiert das Live-Leaderboard für ein Event")
-                        .addOption(OptionType.STRING, "event", "Event ID (optional, sonst latest)", false),
-
                 Commands.slash("role", "Erstellt eine Reaction-Role Nachricht")
                         .addOption(OptionType.ROLE,   "role", "Rolle, die bei Reaction vergeben wird", true)
                         .addOption(OptionType.STRING, "reaction", "Emoji für die Reaction", true),
 
-                Commands.slash("temp", "temp")
+                Commands.slash("parse_data", "parse raw seed data")
+                        .addOption(OptionType.STRING,   "file", "filename", true)
+                        .addOption(OptionType.INTEGER, "id", "seedidentifyer", true)
+                        .addOption(OptionType.STRING,  "event", "Event ID (optional)", false),
+
+                Commands.slash("insert_seed", "insert a seed to database")
+                        .addOption(OptionType.INTEGER, "id", "matchid", true)
+                        .addOption(OptionType.INTEGER, "seednumber", "seednumber", true)
+                        .addOption(OptionType.STRING,  "event", "Event ID (optional)", false)
+                ,
+                Commands.slash("leaderboard_sync", "Aktualisiert nur das Leaderboard")
+                        .addOption(OptionType.STRING, "event", "Event Name (optional, sonst latest)", false)
         ).queue();
     }
 }

@@ -1,4 +1,4 @@
-package de.yolacraft.lcqbot.model;
+package de.yolacraft.lcqbot.model.api;
 
 public enum SeedStatus {
     PENDING,

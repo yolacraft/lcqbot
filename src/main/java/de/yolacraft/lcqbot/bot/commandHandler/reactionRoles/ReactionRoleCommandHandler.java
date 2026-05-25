@@ -1,8 +1,8 @@
-package de.yolacraft.lcqbot.bot.commandHandler;
+package de.yolacraft.lcqbot.bot.commandHandler.reactionRoles;
 
-import de.yolacraft.lcqbot.bot.RoleGuard;
-import de.yolacraft.lcqbot.model.ReactionRole;
-import de.yolacraft.lcqbot.storage.FileStorageService;
+import de.yolacraft.lcqbot.bot.utils.RoleGuard;
+import de.yolacraft.lcqbot.model.api.ReactionRole;
+import de.yolacraft.lcqbot.storage.ReactionRoleFileService;
 import net.dv8tion.jda.api.entities.Role;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
@@ -13,10 +13,10 @@ import java.util.UUID;
 @Component
 public class ReactionRoleCommandHandler {
 
-    private final FileStorageService storage;
+    private final ReactionRoleFileService storage;
     private final RoleGuard roleGuard;
 
-    public ReactionRoleCommandHandler(FileStorageService storage, RoleGuard roleGuard) {
+    public ReactionRoleCommandHandler(ReactionRoleFileService storage, RoleGuard roleGuard) {
         this.storage = storage;
         this.roleGuard = roleGuard;
     }

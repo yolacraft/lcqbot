@@ -1,8 +1,5 @@
-package de.yolacraft.lcqbot.bot;
+package de.yolacraft.lcqbot.bot.utils;
 
-import de.yolacraft.lcqbot.bot.MessageTemplates;
-import de.yolacraft.lcqbot.model.Event;
-import de.yolacraft.lcqbot.storage.FileStorageService;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import org.springframework.stereotype.Component;
@@ -14,28 +11,8 @@ public class RoleGuard {
 
     private static final String ALLOWED_ROLE_ID = "1076284365652361257";
 
-    private final FileStorageService storage;
 
-    public RoleGuard(FileStorageService storage) {
-        this.storage = storage;
-    }
-
-    /**
-     * Gibt true zurück wenn der Member die Admin-Rolle des Events hat.
-     * Antwortet selbst mit einer Fehlermeldung wenn nicht berechtigt.
-     */
-    public boolean checkAndReply(SlashCommandInteractionEvent event, String eventId) {
-        Optional<Event> ev = storage.loadAllEvents().stream()
-                .filter(e -> e.getId().equals(eventId))
-                .findFirst();
-
-        if (ev.isEmpty()) {
-            event.reply(MessageTemplates.EVENT_NOT_FOUND).setEphemeral(true).queue();
-            return false;
-        }
-
-        String adminRoleId = ev.get().getAdminRoleId();
-        return checkMemberAuth(event, adminRoleId);
+    public RoleGuard() {
     }
 
     public boolean checkAdminOrFixedRoleAndReply(SlashCommandInteractionEvent event) {
@@ -44,7 +21,7 @@ public class RoleGuard {
 
     private boolean checkMemberAuth(SlashCommandInteractionEvent event, String adminRoleId) {
         if (event.getMember() == null) {
-            event.reply(MessageTemplates.NO_PERMISSION).setEphemeral(true).queue();
+            event.reply(MessageEncoder.getMessage("no_permission")).setEphemeral(true).queue();
             return false;
         }
 
@@ -58,7 +35,7 @@ public class RoleGuard {
             return true;
         }
 
-        event.reply(MessageTemplates.NO_PERMISSION)
+        event.reply(MessageEncoder.getMessage("no_permission"))
                 .setEphemeral(true)
                 .queue();
         return false;

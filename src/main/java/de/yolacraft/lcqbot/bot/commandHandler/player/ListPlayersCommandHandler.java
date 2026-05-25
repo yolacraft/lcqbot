@@ -1,51 +1,42 @@
-package de.yolacraft.lcqbot.bot.commandHandler;
+package de.yolacraft.lcqbot.bot.commandHandler.player;
 
-import de.yolacraft.lcqbot.bot.DiscordMessageSender;
-import de.yolacraft.lcqbot.bot.EventResolver;
-import de.yolacraft.lcqbot.bot.MessageTemplates;
-import de.yolacraft.lcqbot.bot.RoleGuard;
-import de.yolacraft.lcqbot.model.Event;
+import de.yolacraft.lcqbot.bot.utils.DiscordMessageSender;
+import de.yolacraft.lcqbot.bot.utils.MessageEncoder;
+import de.yolacraft.lcqbot.bot.utils.RoleGuard;
 import de.yolacraft.lcqbot.model.Player;
 import de.yolacraft.lcqbot.storage.FileStorageService;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
+import net.dv8tion.jda.api.interactions.commands.OptionMapping;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
-import java.util.Optional;
 
 @Component
 public class ListPlayersCommandHandler {
 
     private final FileStorageService storage;
-    private final EventResolver resolver;
     private final RoleGuard roleGuard;
 
-    public ListPlayersCommandHandler(FileStorageService storage, EventResolver resolver, RoleGuard roleGuard) {
+    public ListPlayersCommandHandler(FileStorageService storage, RoleGuard roleGuard) {
         this.storage = storage;
-        this.resolver = resolver;
         this.roleGuard = roleGuard;
     }
 
     public void handle(SlashCommandInteractionEvent interaction) {
-        Optional<Event> opt = resolver.resolveAndReply(interaction);
-        if (opt.isEmpty()) {
-            return;
-        }
+        if (!roleGuard.checkAdminOrFixedRoleAndReply(interaction)) return;
 
-        Event event = opt.get();
-        if (!roleGuard.checkAndReply(interaction, event.getId())) {
-            return;
-        }
-
-        List<Player> players = storage.loadPlayers(event.getId());
+        OptionMapping opt = interaction.getOption("event");
+        String eventName = null;
+        if(opt != null) eventName = opt.getAsString();
+        List<Player> players = storage.getPlayers(eventName);
 
         StringBuilder builder = new StringBuilder();
-        builder.append(String.format(MessageTemplates.PLAYER_LIST_HEADER, players.size()));
+        builder.append(MessageEncoder.format("player_list_header", players.size()));
 
         for (Player player : players) {
             builder.append("\n- ");
             builder.append("<@").append(player.getDiscordUserId()).append("> - ");
-            builder.append(escapeDiscordMarkdown(player.getIngameName()));
+            builder.append(escapeDiscordMarkdown(player.getIgn()));
         }
 
         String fullMessage = builder.toString();
@@ -62,9 +53,6 @@ public class ListPlayersCommandHandler {
         }
     }
 
-    /**
-     * Escaped Discord Markdown Sonderzeichen, damit keine Formatierung passiert.
-     */
     private String escapeDiscordMarkdown(String text) {
         if (text == null) return "";
 

@@ -1,12 +1,12 @@
 package de.yolacraft.lcqbot.service;
 
 import com.google.gson.Gson;
-import de.yolacraft.lcqbot.bot.MessageTemplates;
-import de.yolacraft.lcqbot.model.*;
-import de.yolacraft.lcqbot.model.api.McsrResponse;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import de.yolacraft.lcqbot.storage.FileStorageService;
 import net.dv8tion.jda.api.JDA;
-import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
+import net.dv8tion.jda.api.entities.channel.unions.MessageChannelUnion;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
@@ -14,7 +14,8 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.util.*;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
 @Service
@@ -24,9 +25,12 @@ public class MatchTrackingService {
     private final JDA jda;
     private final HttpClient httpClient;
     private final Gson gson;
+    private volatile boolean isDone;
 
     private volatile String latestLiveDataRaw = null;
     private volatile boolean isTracking = false;
+
+    private final Set<Integer> knownMatchIds = new HashSet<>();
 
     public MatchTrackingService(FileStorageService storage, @Lazy JDA jda) {
         this.storage = storage;
@@ -35,121 +39,68 @@ public class MatchTrackingService {
         this.gson = new Gson();
     }
 
-    public void startTracking(Event event, String hostName, int seedNumber) {
+    public void startTracking(String eventName, String hostName, MessageChannelUnion channel) {
         isTracking = true;
+        isDone = false;
         latestLiveDataRaw = null;
+        knownMatchIds.clear();
 
         CompletableFuture.runAsync(() -> {
+            boolean initialFetchDone = false;
+
             try {
-                boolean isDone = false;
                 while (!isDone) {
                     HttpRequest request = HttpRequest.newBuilder()
-                            .uri(URI.create("https://api.mcsrranked.com/users/" + hostName + "/live"))
-                            .header("Private-Key", event.getApiKey())
+                            .uri(URI.create("https://api.mcsrranked.com/users/" + hostName + "/matches"))
                             .GET()
                             .build();
 
                     HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
 
+                    System.out.println("Fetching matches for " + hostName);
+
                     if (response.statusCode() == 200) {
-                        latestLiveDataRaw = response.body();
-                        McsrResponse mcsrResponse = gson.fromJson(latestLiveDataRaw, McsrResponse.class);
+                        String body = response.body();
+                        latestLiveDataRaw = body;
 
+                        System.out.println("Successfully fetched matches for " + hostName);
 
-                        if (mcsrResponse.data != null && "done".equalsIgnoreCase(mcsrResponse.data.status)) {
-                            isDone = true;
-                            processFinishedMatch(event, mcsrResponse, seedNumber);
+                        JsonObject root = JsonParser.parseString(body).getAsJsonObject();
+                        JsonArray matches = root.getAsJsonArray("data");
+
+                        if (!initialFetchDone) {
+                            for (int i = 0; i < matches.size(); i++) {
+                                int id = matches.get(i).getAsJsonObject().get("id").getAsInt();
+                                knownMatchIds.add(id);
+                            }
+                            initialFetchDone = true;
+                        } else {
+                            for (int i = 0; i < matches.size(); i++) {
+                                JsonObject match = matches.get(i).getAsJsonObject();
+                                int id = match.get("id").getAsInt();
+
+                                if (!knownMatchIds.contains(id)) {
+                                    knownMatchIds.add(id);
+                                    System.out.println("Found match for " + hostName + ":" + id);
+                                    channel.sendMessage("Match Found: `" + id + "`").queue();
+
+                                }
+                            }
                         }
                     }
-
                     if (!isDone) {
-                        Thread.sleep(15000); // Alle 10 Sekunden checken
+                        Thread.sleep(10000);
                     }
                 }
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
             } catch (Exception e) {
                 e.printStackTrace();
+            } finally {
+                isTracking = false;
             }
         });
     }
-
-    private void processFinishedMatch(Event event, McsrResponse response, int seedNumber) {
-        List<Player> allPlayers = storage.loadPlayers(event.getId());
-        List<Placement> placements = new ArrayList<>();
-
-        List<McsrResponse.McsrCompletion> completions = response.data.completions != null ? response.data.completions : new ArrayList<>();
-        completions.sort(Comparator.comparingLong(c -> c.time));
-
-        int currentPlace = 1;
-        Set<String> finishedUuids = new HashSet<>();
-
-        for (McsrResponse.McsrCompletion comp : completions) {
-            finishedUuids.add(comp.uuid);
-
-            // Finde den Ingame-Namen anhand der UUID aus dem API response.data.players array
-            String inGameName = response.data.players.stream()
-                    .filter(p -> p.uuid.equals(comp.uuid))
-                    .map(p -> p.nickname)
-                    .findFirst()
-                    .orElse(null);
-
-            if (inGameName == null) continue;
-
-            // Finde unseren Bot-Player anhand des Ingame Namens (case insensitive)
-            Optional<Player> botPlayerOpt = allPlayers.stream()
-                    .filter(p -> p.getIngameName().equalsIgnoreCase(inGameName) && !p.isEliminated())
-                    .findFirst();
-
-            if (botPlayerOpt.isPresent()) {
-                Player p = botPlayerOpt.get();
-                Placement placement = new Placement(p.getId(), true, currentPlace, comp.time);
-
-                // Punkteberechnung: 1. Platz 12 Punkte, 2. 11 ... ab 13. Platz 1 Punkt
-                int points = currentPlace <= 12 ? (13 - currentPlace) : 1;
-                placement.setPoints(points);
-
-                placements.add(placement);
-                currentPlace++;
-            }
-        }
-
-        // Spieler, die es nicht geschafft haben (0 Punkte)
-        for (Player p : allPlayers) {
-            if (p.isEliminated()) continue;
-
-            boolean finished = placements.stream().anyMatch(pl -> pl.getPlayerId().equals(p.getId()));
-            if (!finished) {
-                Placement noFinish = new Placement(p.getId(), false, 999, 0);
-                noFinish.setPoints(0);
-                placements.add(noFinish);
-            }
-        }
-
-        // Seed speichern oder aktualisieren
-        List<Seed> existingSeeds = storage.loadSeeds(event.getId());
-        Seed seed = existingSeeds.stream()
-                .filter(s -> s.getSeedNumber() == seedNumber)
-                .findFirst()
-                .orElseGet(() -> {
-                    Seed newSeed = new Seed();
-                    newSeed.setId(UUID.randomUUID().toString());
-                    newSeed.setEventId(event.getId());
-                    newSeed.setSeedNumber(seedNumber);
-                    newSeed.setStartedAt(System.currentTimeMillis());
-                    return newSeed;
-                });
-
-        seed.setStatus(SeedStatus.PENDING);
-        seed.setPlacements(placements);
-
-        storage.saveSeed(seed);
-
-        // Nachricht im Kanal, in dem /init ausgeführt wurde
-        TextChannel initiatedChannel = jda.getTextChannelById(event.getInitiatedChannelId());
-        if (initiatedChannel != null) {
-            initiatedChannel.sendMessage(MessageTemplates.formatSeedFinished(seedNumber)).queue();
-        }
-    }
-
 
     public String getLatestLiveDataRaw() {
         return latestLiveDataRaw;
@@ -157,5 +108,13 @@ public class MatchTrackingService {
 
     public boolean isTracking() {
         return isTracking;
+    }
+
+    public boolean isDone() {
+        return isDone;
+    }
+
+    public void setDone(boolean done) {
+        isDone = done;
     }
 }

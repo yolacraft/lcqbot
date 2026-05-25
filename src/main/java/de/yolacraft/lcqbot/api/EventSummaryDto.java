@@ -1,6 +1,6 @@
 package de.yolacraft.lcqbot.api;
 
-import de.yolacraft.lcqbot.model.EventStatus;
+import de.yolacraft.lcqbot.model.api.EventStatus;
 
 public record EventSummaryDto(
         String id,

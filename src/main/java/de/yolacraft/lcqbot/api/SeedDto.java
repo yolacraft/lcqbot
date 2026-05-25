@@ -1,6 +1,6 @@
 package de.yolacraft.lcqbot.api;
 
-import de.yolacraft.lcqbot.model.SeedStatus;
+import de.yolacraft.lcqbot.model.api.SeedStatus;
 import java.util.List;
 
 public record SeedDto(

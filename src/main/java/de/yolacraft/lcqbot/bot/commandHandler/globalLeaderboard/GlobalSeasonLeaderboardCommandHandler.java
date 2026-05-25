@@ -1,4 +1,4 @@
-package de.yolacraft.lcqbot.bot.commandHandler;
+package de.yolacraft.lcqbot.bot.commandHandler.globalLeaderboard;
 
 import de.yolacraft.lcqbot.seasonleaderboard.SeasonLeaderboard;
 import de.yolacraft.lcqbot.seasonleaderboard.SeasonLeaderboardException;

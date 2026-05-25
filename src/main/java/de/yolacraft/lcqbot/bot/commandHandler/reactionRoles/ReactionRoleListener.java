@@ -1,7 +1,7 @@
-package de.yolacraft.lcqbot.bot;
+package de.yolacraft.lcqbot.bot.commandHandler.reactionRoles;
 
-import de.yolacraft.lcqbot.model.ReactionRole;
-import de.yolacraft.lcqbot.storage.FileStorageService;
+import de.yolacraft.lcqbot.model.api.ReactionRole;
+import de.yolacraft.lcqbot.storage.ReactionRoleFileService;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Role;
@@ -15,9 +15,9 @@ import java.util.Optional;
 @Component
 public class ReactionRoleListener extends ListenerAdapter {
 
-    private final FileStorageService storage;
+    private final ReactionRoleFileService storage;
 
-    public ReactionRoleListener(FileStorageService storage) {
+    public ReactionRoleListener(ReactionRoleFileService storage) {
         this.storage = storage;
     }
 

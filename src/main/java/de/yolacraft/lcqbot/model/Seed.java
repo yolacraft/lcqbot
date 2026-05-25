@@ -1,33 +1,37 @@
 package de.yolacraft.lcqbot.model;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 public class Seed {
-    private String id;
-    private String eventId;
+    private UUID uuid;
     private int seedNumber;
-    private SeedStatus status;
     private long startedAt;
-    private long confirmedAt;
-    private List<Placement> placements = new ArrayList<>();
+    private Map<UUID, Long> completions;
 
-    public Seed() {}
+    //SEED INFO
+    private String seedType;
+    private String bastionType;
+    private int[] endTowers;
+    private String[] variations;
 
-    public String getId() {
-        return id;
+    public Seed(UUID uuid, int seedNumber, long startedAt, Map<UUID, Long> completions, String seedType, String bastionType, int[] endTowers, String[] variations) {
+        this.uuid = uuid;
+        this.seedNumber = seedNumber;
+        this.startedAt = startedAt;
+        this.completions = completions;
+        this.seedType = seedType;
+        this.bastionType = bastionType;
+        this.endTowers = endTowers;
+        this.variations = variations;
     }
 
-    public void setId(String id) {
-        this.id = id;
+    public UUID getUuid() {
+        return uuid;
     }
 
-    public String getEventId() {
-        return eventId;
-    }
-
-    public void setEventId(String eventId) {
-        this.eventId = eventId;
+    public void setUuid(UUID uuid) {
+        this.uuid = uuid;
     }
 
     public int getSeedNumber() {
@@ -38,14 +42,6 @@ public class Seed {
         this.seedNumber = seedNumber;
     }
 
-    public SeedStatus getStatus() {
-        return status;
-    }
-
-    public void setStatus(SeedStatus status) {
-        this.status = status;
-    }
-
     public long getStartedAt() {
         return startedAt;
     }
@@ -54,19 +50,43 @@ public class Seed {
         this.startedAt = startedAt;
     }
 
-    public long getConfirmedAt() {
-        return confirmedAt;
+    public Map<UUID, Long> getCompletions() {
+        return completions;
     }
 
-    public void setConfirmedAt(long confirmedAt) {
-        this.confirmedAt = confirmedAt;
+    public void setCompletions(Map<UUID, Long> completions) {
+        this.completions = completions;
     }
 
-    public List<Placement> getPlacements() {
-        return placements;
+    public String getSeedType() {
+        return seedType;
     }
 
-    public void setPlacements(List<Placement> placements) {
-        this.placements = placements;
+    public void setSeedType(String seedType) {
+        this.seedType = seedType;
+    }
+
+    public String getBastionType() {
+        return bastionType;
+    }
+
+    public void setBastionType(String bastionType) {
+        this.bastionType = bastionType;
+    }
+
+    public int[] getEndTowers() {
+        return endTowers;
+    }
+
+    public void setEndTowers(int[] endTowers) {
+        this.endTowers = endTowers;
+    }
+
+    public String[] getVariations() {
+        return variations;
+    }
+
+    public void setVariations(String[] variations) {
+        this.variations = variations;
     }
 }

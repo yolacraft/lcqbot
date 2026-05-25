@@ -1,4 +1,4 @@
-package de.yolacraft.lcqbot.bot.commandHandler;
+package de.yolacraft.lcqbot.bot.commandHandler.globalLeaderboard;
 
 import de.yolacraft.lcqbot.seasonleaderboard.SeasonLeaderboard;
 import de.yolacraft.lcqbot.seasonleaderboard.SeasonLeaderboardException;
@@ -8,22 +8,27 @@ import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEve
 import org.springframework.stereotype.Component;
 
 @Component
-public class SyncSeasonLeaderboardCommandHandler {
+public class AddPointsCommandHandler {
 
     private final SeasonLeaderboardService leaderboardService;
 
-    public SyncSeasonLeaderboardCommandHandler(SeasonLeaderboardService leaderboardService) {
+    public AddPointsCommandHandler(SeasonLeaderboardService leaderboardService) {
         this.leaderboardService = leaderboardService;
     }
 
     public void handle(SlashCommandInteractionEvent interaction) {
         interaction.deferReply(true).queue(hook -> {
+            String player = interaction.getOption("player").getAsString();
+            int week = interaction.getOption("week").getAsInt();
+            int points = interaction.getOption("points").getAsInt();
             var leaderboardOption = interaction.getOption("leaderboard");
             String leaderboardId = leaderboardOption != null ? leaderboardOption.getAsString() : null;
 
             SeasonLeaderboard leaderboard;
             try {
                 leaderboard = leaderboardService.loadLeaderboardOrLatest(leaderboardId);
+                leaderboardService.addOrUpdatePlayerPoints(leaderboard, player, week, points);
+                leaderboardService.saveLeaderboard(leaderboard);
             } catch (SeasonLeaderboardException e) {
                 hook.sendMessage(e.getMessage()).queue();
                 return;
@@ -42,7 +47,7 @@ public class SyncSeasonLeaderboardCommandHandler {
 
             channel.retrieveMessageById(leaderboard.getMessageId()).queue(storedMessage -> {
                 storedMessage.editMessage(leaderboardService.buildText(leaderboard)).queue(
-                        success -> hook.sendMessage("Leaderboard synchronized successfully.").queue(),
+                        success -> hook.sendMessage("Points saved and leaderboard updated.").queue(),
                         failure -> hook.sendMessage("Failed to edit leaderboard message: " + failure.getMessage()).queue()
                 );
             }, failure -> hook.sendMessage("Stored leaderboard message was not found.").queue());

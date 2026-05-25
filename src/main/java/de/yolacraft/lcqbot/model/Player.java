@@ -1,55 +1,30 @@
 package de.yolacraft.lcqbot.model;
 
+import java.util.UUID;
+
 public class Player {
-    private String id;
-    private String eventId;
-    private String ingameName;
-    private String discordName;
-    private String alias;
-    private String discordUserId;   // Discord Snowflake ID
-    private boolean eliminated = false;
+    private UUID uuid;
+    private String discordUserId;
+    private String minecraftUUID;
+    private String twitchUserName;
+    private String ign;
+    private boolean eliminated;
 
-    public Player() {}
-
-
-    public String getId() {
-        return id;
+    public Player(String discordUserId, String minecraftUUID, String twitchUserName, String ign) {
+        this.discordUserId = discordUserId;
+        this.minecraftUUID = minecraftUUID;
+        uuid = UUID.randomUUID();
+        this.twitchUserName = twitchUserName;
+        this.ign = ign;
+        eliminated = false;
     }
 
-    public void setId(String id) {
-        this.id = id;
+    public UUID getUuid() {
+        return uuid;
     }
 
-    public String getEventId() {
-        return eventId;
-    }
-
-    public void setEventId(String eventId) {
-        this.eventId = eventId;
-    }
-
-    public String getIngameName() {
-        return ingameName;
-    }
-
-    public void setIngameName(String ingameName) {
-        this.ingameName = ingameName;
-    }
-
-    public String getDiscordName() {
-        return discordName;
-    }
-
-    public void setDiscordName(String discordName) {
-        this.discordName = discordName;
-    }
-
-    public String getAlias() {
-        return alias;
-    }
-
-    public void setAlias(String alias) {
-        this.alias = alias;
+    public void setUuid(UUID uuid) {
+        this.uuid = uuid;
     }
 
     public String getDiscordUserId() {
@@ -58,6 +33,30 @@ public class Player {
 
     public void setDiscordUserId(String discordUserId) {
         this.discordUserId = discordUserId;
+    }
+
+    public String getMinecraftUUID() {
+        return minecraftUUID;
+    }
+
+    public void setMinecraftUUID(String minecraftUUID) {
+        this.minecraftUUID = minecraftUUID;
+    }
+
+    public String getTwitchUserName() {
+        return twitchUserName;
+    }
+
+    public void setTwitchUserName(String twitchUserName) {
+        this.twitchUserName = twitchUserName;
+    }
+
+    public String getIgn() {
+        return ign;
+    }
+
+    public void setIgn(String ign) {
+        this.ign = ign;
     }
 
     public boolean isEliminated() {
